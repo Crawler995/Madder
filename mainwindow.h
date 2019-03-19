@@ -7,6 +7,7 @@
 #include <QAction>
 #include <QStatusBar>
 #include <QToolBar>
+#include <QMouseEvent>
 
 #include "workarea.h"
 
@@ -24,7 +25,7 @@ private:
              *restartAction, *exitAction, *preferenceAction, *referenceAction, *authorAction;
     QToolBar *toolBar;
     QStatusBar *statusBar;
-    QLabel *fileInfoLabel, *curInfoLabel, *showScaleRatioLabel;
+    QLabel *fileInfoLabel, *curInfoLabel, *showScaleRatioLabel, *colorValueLabel, *helpTextLabel;
     WorkArea *workArea;
 
     void createMenu(QMainWindow *mainWindow);
@@ -35,6 +36,8 @@ private:
 public slots:
     void setShowScaleRatioLabelText(double showScaleRatio);
     void setCurInfoLabelText(int x, int y, QString &color);
+    void setColorValueLabel(QColor &color);
+    void setHelpTextLabelCursorInImage();
 };
 
 #endif // MAINWINDOW_H

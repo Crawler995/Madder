@@ -8,11 +8,7 @@ ColorBoard::ColorBoard(QWidget *parent) : QWidget(parent)
 {
     QGridLayout *layout = new QGridLayout(this);
 
-    colors.push_back(QColor(2, 33, 44));
-    colors.push_back(QColor(44, 55, 66));
-    colors.push_back(QColor(177, 55, 70));
-    colors.push_back(QColor(84, 55, 66));
-    colors.push_back(QColor(44, 85, 66));
+    computeMainColor();
 
     QVector<QColor>::const_iterator it;
     for(it = colors.constBegin(); it != colors.constEnd(); it++) {
@@ -61,4 +57,13 @@ QString ColorBoard::decToHexString(int value)
     res += QString::number(value, 16);
 
     return res;
+}
+
+void ColorBoard::computeMainColor()
+{
+    colors.push_back(QColor("#2c1213"));
+    colors.push_back(QColor("#910601"));
+    colors.push_back(QColor("#fefdeb"));
+    colors.push_back(QColor("#b41100"));
+    colors.push_back(QColor("#601a1c"));
 }

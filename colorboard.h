@@ -17,6 +17,7 @@ private:
     QVector<QLabel*> colorLabels, colorValueLabels;
 
     QString decToHexString(int value);
+    void computeMainColor();
 };
 
 #endif // COLORBOARD_H

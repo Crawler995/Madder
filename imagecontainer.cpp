@@ -7,6 +7,7 @@
 #include <QWheelEvent>
 #include <QGraphicsDropShadowEffect>
 #include <QEvent>
+#include <QToolTip>
 
 ImageContainer::ImageContainer(QWidget *parent) : QWidget(parent)
 {
@@ -20,8 +21,8 @@ ImageContainer::ImageContainer(QWidget *parent) : QWidget(parent)
     setLayout(layout);
 
     imageLabel = new QLabel(this);
-    QImage *m = new QImage("E:/coding/Qt/Madder/a.jpg");
-    imageLabel->setPixmap(QPixmap::fromImage(*m));
+    image = new QImage("E:/waste/madder.jpg");
+    imageLabel->setPixmap(QPixmap::fromImage(*image));
 
     imageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     imageLabel->setScaledContents(true);
@@ -74,9 +75,55 @@ bool ImageContainer::eventFilter(QObject *watched, QEvent *event)
 {
     if(watched == imageLabel) {
         if(event->type() == QEvent::MouseMove) {
-            QString color("#520520");
             QMouseEvent *e = static_cast<QMouseEvent*>(event);
-            emit cursorInImageSignal(e->pos().x(), e->pos().y(), color);
+            QString colorValue;
+            QColor color = getPixelColor(e->pos().x(), e->pos().y());
+
+            colorValue += "#" + decToHexString(color.red()) + decToHexString(color.green()) +
+                    decToHexString(color.blue());
+
+            int x = e->pos().x() / showScaleRatio / fileIntoContainerScaleRatio;
+            int y = e->pos().y() / showScaleRatio / fileIntoContainerScaleRatio;
+
+            emit cursorInImageSignal(x, y, colorValue);
+            emit cursorInImageSignal(color);
+        }
+        else if(event->type() == QEvent::Enter) {
+            emit cursorInImageSignal();
         }
     }
+}
+
+QLabel *ImageContainer::getImageLabel() const
+{
+    return imageLabel;
+}
+
+double ImageContainer::getShowScaleRatio() const
+{
+    return showScaleRatio;
+}
+
+double ImageContainer::getFileIntoContainerScaleRatio() const
+{
+    return fileIntoContainerScaleRatio;
+}
+
+QColor ImageContainer::getPixelColor(int x, int y)
+{
+    x /= fileIntoContainerScaleRatio * showScaleRatio;
+    y /= fileIntoContainerScaleRatio * showScaleRatio;
+
+    return image->pixelColor(x, y);
+}
+
+QString ImageContainer::decToHexString(int value)
+{
+    QString res;
+    if(value <= 0x0f) {
+        res += "0";
+    }
+    res += QString::number(value, 16);
+
+    return res;
 }

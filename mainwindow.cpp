@@ -7,6 +7,9 @@
 #include <QLabel>
 #include <QIcon>
 #include <QToolBar>
+#include <QMouseEvent>
+#include <QGraphicsDropShadowEffect>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -26,6 +29,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(workArea->getImageContainer(),
             SIGNAL(cursorInImageSignal(int,int,QString&)),
             SLOT(setCurInfoLabelText(int,int,QString&)));
+    connect(workArea->getImageContainer(),
+            SIGNAL(cursorInImageSignal(QColor&)),
+            SLOT(setColorValueLabel(QColor&)));
+    connect(workArea->getImageContainer(),
+            SIGNAL(cursorInImageSignal()),
+            SLOT(setHelpTextLabelCursorInImage()));
 }
 
 MainWindow::~MainWindow()
@@ -65,17 +74,23 @@ void MainWindow::createStatusBar(QMainWindow *mainWindow)
 {
     statusBar = mainWindow->statusBar();
 
-    fileInfoLabel = new QLabel(tr("a.jpg, 1920 * 1080"), statusBar);
-    curInfoLabel = new QLabel(tr("(x: 244, y: 444), #4f556e"), statusBar);
+    fileInfoLabel = new QLabel(tr("madder.jpg, 1188 * 666"), statusBar);
+    curInfoLabel = new QLabel(tr("(x: 0, y: 0), #000000"), statusBar);
     showScaleRatioLabel = new QLabel(tr("缩放：100%"), statusBar);
+    colorValueLabel = new QLabel(statusBar);
+    helpTextLabel = new QLabel(tr("点击右侧色板可将颜色复制到剪贴板。"));
 
     fileInfoLabel->setAlignment(Qt::AlignCenter);
     curInfoLabel->setAlignment(Qt::AlignCenter);
     showScaleRatioLabel->setAlignment(Qt::AlignCenter);
+    colorValueLabel->setAlignment(Qt::AlignCenter);
+    helpTextLabel->setAlignment(Qt::AlignCenter);
 
-    statusBar->addPermanentWidget(fileInfoLabel, 1);
-    statusBar->addWidget(curInfoLabel, 1);
-    statusBar->addWidget(showScaleRatioLabel, 1);
+    statusBar->addPermanentWidget(fileInfoLabel, 3);
+    statusBar->addWidget(curInfoLabel, 3);
+    statusBar->addWidget(colorValueLabel, 1);
+    statusBar->addWidget(helpTextLabel, 6);
+    statusBar->addWidget(showScaleRatioLabel, 2);
 }
 
 void MainWindow::createToolBar(QMainWindow *mainWindow)
@@ -117,4 +132,17 @@ void MainWindow::setCurInfoLabelText(int x, int y, QString &color)
     info = info + "(x: " + QString::number(x) + ", y: " + QString::number(y) + "), " + color;
 
     curInfoLabel->setText(info);
+}
+
+void MainWindow::setColorValueLabel(QColor &color)
+{
+    QPalette palette;
+    palette.setColor(QPalette::Background, color);
+    colorValueLabel->setAutoFillBackground(true);
+    colorValueLabel->setPalette(palette);
+}
+
+void MainWindow::setHelpTextLabelCursorInImage()
+{
+    helpTextLabel->setText(tr("Shift+鼠标左键即可复制此点颜色。"));
 }
