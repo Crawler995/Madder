@@ -12,7 +12,9 @@ class WorkArea : public QWidget
     Q_OBJECT
 public:
     explicit WorkArea(QWidget *parent = 0);
+
     ImageContainer *getImageContainer() const;
+    ColorBoard *getColorBoard() const;
 
 private:
     QGridLayout *layout;

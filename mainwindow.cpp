@@ -9,6 +9,7 @@
 #include <QToolBar>
 #include <QMouseEvent>
 #include <QGraphicsDropShadowEffect>
+#include <QVector>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -23,18 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     setMouseTracking(true);
     workArea->setMouseTracking(true);
 
-    connect(workArea->getImageContainer(),
-            SIGNAL(showScaleRatioChangeSignal(double)),
-            SLOT(setShowScaleRatioLabelText(double)));
-    connect(workArea->getImageContainer(),
-            SIGNAL(cursorInImageSignal(int,int,QString&)),
-            SLOT(setCurInfoLabelText(int,int,QString&)));
-    connect(workArea->getImageContainer(),
-            SIGNAL(cursorInImageSignal(QColor&)),
-            SLOT(setColorValueLabel(QColor&)));
-    connect(workArea->getImageContainer(),
-            SIGNAL(cursorInImageSignal()),
-            SLOT(setHelpTextLabelCursorInImage()));
+    connectSlots();
 }
 
 MainWindow::~MainWindow()
@@ -87,9 +77,9 @@ void MainWindow::createStatusBar(QMainWindow *mainWindow)
     helpTextLabel->setAlignment(Qt::AlignCenter);
 
     statusBar->addPermanentWidget(fileInfoLabel, 3);
-    statusBar->addWidget(curInfoLabel, 3);
+    statusBar->addWidget(curInfoLabel, 4);
     statusBar->addWidget(colorValueLabel, 1);
-    statusBar->addWidget(helpTextLabel, 6);
+    statusBar->addWidget(helpTextLabel, 5);
     statusBar->addWidget(showScaleRatioLabel, 2);
 }
 
@@ -115,6 +105,31 @@ void MainWindow::createWorkArea(QMainWindow *mainWindow)
 {
     workArea = new WorkArea(mainWindow);
     mainWindow->setCentralWidget(workArea);
+}
+
+void MainWindow::connectSlots()
+{
+    connect(workArea->getImageContainer(),
+            SIGNAL(showScaleRatioChangeSignal(double)),
+            SLOT(setShowScaleRatioLabelText(double)));
+    connect(workArea->getImageContainer(),
+            SIGNAL(cursorInImageSignal(int,int,QString&)),
+            SLOT(setCurInfoLabelText(int,int,QString&)));
+    connect(workArea->getImageContainer(),
+            SIGNAL(cursorInImageSignal(QColor&)),
+            SLOT(setColorValueLabel(QColor&)));
+    connect(workArea->getImageContainer(),
+            SIGNAL(cursorInImageSignal()),
+            SLOT(setHelpTextLabelCursorInImage()));
+    connect(workArea->getImageContainer(),
+            SIGNAL(cursorOutImageSignal()),
+            SLOT(setHelpTextLabelCursorOutImage()));
+    connect(workArea->getColorBoard(),
+            SIGNAL(copySuccessFromColorBoradSignal()),
+            SLOT(setHelpTextLabelCopySuccess()));
+    connect(workArea->getImageContainer(),
+            SIGNAL(copySuccessFromImageLabelSignal()),
+            SLOT(setHelpTextLabelCopySuccess()));
 }
 
 void MainWindow::setShowScaleRatioLabelText(double showScaleRatio)
@@ -144,5 +159,18 @@ void MainWindow::setColorValueLabel(QColor &color)
 
 void MainWindow::setHelpTextLabelCursorInImage()
 {
-    helpTextLabel->setText(tr("Shift+鼠标左键即可复制此点颜色。"));
+    helpTextLabel->setText(tr("双击将鼠标所指点颜色复制到剪贴板。"));
+    helpTextLabel->setStyleSheet("color: black");
+}
+
+void MainWindow::setHelpTextLabelCursorOutImage()
+{
+    helpTextLabel->setText(tr("单击右侧色板将颜色复制到剪贴板。"));
+    helpTextLabel->setStyleSheet("color: black");
+}
+
+void MainWindow::setHelpTextLabelCopySuccess()
+{
+    helpTextLabel->setText(tr("复制颜色成功！"));
+    helpTextLabel->setStyleSheet("color: green");
 }

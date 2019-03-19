@@ -8,6 +8,8 @@
 #include <QGraphicsDropShadowEffect>
 #include <QEvent>
 #include <QToolTip>
+#include <QApplication>
+#include <QClipboard>
 
 ImageContainer::ImageContainer(QWidget *parent) : QWidget(parent)
 {
@@ -90,6 +92,21 @@ bool ImageContainer::eventFilter(QObject *watched, QEvent *event)
         }
         else if(event->type() == QEvent::Enter) {
             emit cursorInImageSignal();
+        }
+        else if(event->type() == QEvent::Leave) {
+            emit cursorOutImageSignal();
+        }
+        else if(event->type() == QEvent::MouseButtonDblClick) {
+            QMouseEvent *e = static_cast<QMouseEvent*>(event);
+            QString colorValue;
+            QColor color = getPixelColor(e->pos().x(), e->pos().y());
+
+            colorValue += "#" + decToHexString(color.red()) + decToHexString(color.green()) +
+                    decToHexString(color.blue());
+            QClipboard *clipBoard = QApplication::clipboard();
+            clipBoard->setText(colorValue);
+
+            emit copySuccessFromImageLabelSignal();
         }
     }
 }

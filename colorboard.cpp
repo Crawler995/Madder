@@ -1,4 +1,5 @@
 #include "colorboard.h"
+#include "colorlabel.h"
 #include <QLabel>
 #include <QGridLayout>
 #include <QVector>
@@ -10,25 +11,21 @@ ColorBoard::ColorBoard(QWidget *parent) : QWidget(parent)
 
     computeMainColor();
 
+    QLabel *text = new QLabel(tr("图片主色"), this);
+    text->setAlignment(Qt::AlignCenter);
+    layout->addWidget(text, 0, 0, 1, 3);
+
     QVector<QColor>::const_iterator it;
     for(it = colors.constBegin(); it != colors.constEnd(); it++) {
         int index = it - colors.begin();
 
-        QLabel *colorLabel = new QLabel(this);
-
-        QPalette palette;
-        palette.setColor(QPalette::Background, *it);
-        colorLabel->setAutoFillBackground(true);
-        colorLabel->setPalette(palette);
-
-        QGraphicsDropShadowEffect *colorLabelShadow = new QGraphicsDropShadowEffect(this);
-        colorLabelShadow->setBlurRadius(20.0);
-        colorLabelShadow->setColor(QColor(0, 0, 0, 160));
-        colorLabelShadow->setOffset(3.0);
-        colorLabel->setGraphicsEffect(colorLabelShadow);
+        ColorLabel *colorLabel = new ColorLabel(*it, this);
 
         colorLabels.push_back(colorLabel);
-        layout->addWidget(colorLabel, index, 0, 1, 2);
+        layout->addWidget(colorLabel, index * 3 + 1, 0, 3, 2);
+
+        connect(colorLabel, SIGNAL(copySuccessSignalFromColorLabelSignal()),
+                SLOT(sendCopySuccessSignal()));
 
         QLabel *colorValueLabel = new QLabel(this);
         QString colorValue;
@@ -41,12 +38,18 @@ ColorBoard::ColorBoard(QWidget *parent) : QWidget(parent)
         colorValueLabel->setAlignment(Qt::AlignCenter);
         colorValueLabels.push_back(colorValueLabel);
 
-        layout->addWidget(colorValueLabel, index, 2, 1, 1);
+        layout->addWidget(colorValueLabel, index * 3 + 1, 2, 3, 1);
     }
 
     layout->setColumnMinimumWidth(0, 50);
     setLayout(layout);
 }
+
+QVector<ColorLabel *> ColorBoard::getColorLabels() const
+{
+    return colorLabels;
+}
+
 
 QString ColorBoard::decToHexString(int value)
 {
@@ -66,4 +69,9 @@ void ColorBoard::computeMainColor()
     colors.push_back(QColor("#fefdeb"));
     colors.push_back(QColor("#b41100"));
     colors.push_back(QColor("#601a1c"));
+}
+
+void ColorBoard::sendCopySuccessSignal()
+{
+    emit copySuccessFromColorBoradSignal();
 }

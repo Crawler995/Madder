@@ -32,12 +32,15 @@ private:
     void createStatusBar(QMainWindow *mainWindow);
     void createToolBar(QMainWindow *mainWindow);
     void createWorkArea(QMainWindow *mainWindow);
+    void connectSlots();
 
 public slots:
     void setShowScaleRatioLabelText(double showScaleRatio);
     void setCurInfoLabelText(int x, int y, QString &color);
     void setColorValueLabel(QColor &color);
     void setHelpTextLabelCursorInImage();
+    void setHelpTextLabelCursorOutImage();
+    void setHelpTextLabelCopySuccess();
 };
 
 #endif // MAINWINDOW_H

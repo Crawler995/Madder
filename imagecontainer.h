@@ -37,6 +37,8 @@ signals:
     void cursorInImageSignal(int x, int y, QString &color);
     void cursorInImageSignal(QColor &color);
     void cursorInImageSignal();
+    void cursorOutImageSignal();
+    void copySuccessFromImageLabelSignal();
 };
 
 #endif // IMAGECONTAINER_H

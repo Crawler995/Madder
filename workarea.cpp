@@ -19,3 +19,8 @@ ImageContainer *WorkArea::getImageContainer() const
 {
     return imageContainer;
 }
+
+ColorBoard *WorkArea::getColorBoard() const
+{
+    return colorBoard;
+}
