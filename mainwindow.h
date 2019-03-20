@@ -27,11 +27,13 @@ private:
     QStatusBar *statusBar;
     QLabel *fileInfoLabel, *curInfoLabel, *showScaleRatioLabel, *colorValueLabel, *helpTextLabel;
     WorkArea *workArea;
+    QString curFileName;
 
     void createMenu(QMainWindow *mainWindow);
     void createStatusBar(QMainWindow *mainWindow);
     void createToolBar(QMainWindow *mainWindow);
     void createWorkArea(QMainWindow *mainWindow);
+
     void connectSlots();
 
 public slots:
@@ -41,6 +43,15 @@ public slots:
     void setHelpTextLabelCursorInImage();
     void setHelpTextLabelCursorOutImage();
     void setHelpTextLabelCopySuccess();
+    void setFileInfoLabelText(QString info);
+
+    void openFileDialog();
+    void showNewSelectedImage(QString curFileName);
+    void createNewSelectedImageColorBoard();
+
+signals:
+    void imageFileChangeSignal(QString curFileName);
+    void imageFileChangeSignal();
 };
 
 #endif // MAINWINDOW_H

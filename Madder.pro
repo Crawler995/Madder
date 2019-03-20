@@ -28,15 +28,13 @@ SOURCES += main.cpp\
     workarea.cpp \
     imagecontainer.cpp \
     colorboard.cpp \
-    colorlabel.cpp \
-    mmcq.cpp
+    colorlabel.cpp
 
 HEADERS  += mainwindow.h \
     workarea.h \
     imagecontainer.h \
     colorboard.h \
-    colorlabel.h \
-    mmcq.h
+    colorlabel.h
 
 RESOURCES += \
     madder.qrc

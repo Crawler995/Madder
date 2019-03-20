@@ -18,6 +18,7 @@ public:
     double getShowScaleRatio() const;
     QLabel *getImageLabel() const;
 
+    void loadImage(QString fileName);
 protected:
     void wheelEvent(QWheelEvent *event);
     void resizeEvent(QResizeEvent *event);
@@ -31,7 +32,7 @@ private:
 
     QColor getPixelColor(int x, int y);
     QString decToHexString(int value);
-
+    void computeFileIntoContainerScaleRatio();
 signals:
     void showScaleRatioChangeSignal(double showScaleRatio);
     void cursorInImageSignal(int x, int y, QString &color);
@@ -39,6 +40,7 @@ signals:
     void cursorInImageSignal();
     void cursorOutImageSignal();
     void copySuccessFromImageLabelSignal();
+    void imageFileChangeSignal(QString info);
 };
 
 #endif // IMAGECONTAINER_H

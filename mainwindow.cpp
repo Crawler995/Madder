@@ -10,6 +10,7 @@
 #include <QMouseEvent>
 #include <QGraphicsDropShadowEffect>
 #include <QVector>
+#include <QFileDialog>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -64,11 +65,11 @@ void MainWindow::createStatusBar(QMainWindow *mainWindow)
 {
     statusBar = mainWindow->statusBar();
 
-    fileInfoLabel = new QLabel(tr("madder.jpg, 1188 * 666"), statusBar);
-    curInfoLabel = new QLabel(tr("(x: 0, y: 0), #000000"), statusBar);
+    fileInfoLabel = new QLabel(tr(""), statusBar);
+    curInfoLabel = new QLabel(tr(""), statusBar);
     showScaleRatioLabel = new QLabel(tr("缩放：100%"), statusBar);
     colorValueLabel = new QLabel(statusBar);
-    helpTextLabel = new QLabel(tr("点击右侧色板可将颜色复制到剪贴板。"));
+    helpTextLabel = new QLabel(tr(""));
 
     fileInfoLabel->setAlignment(Qt::AlignCenter);
     curInfoLabel->setAlignment(Qt::AlignCenter);
@@ -107,6 +108,27 @@ void MainWindow::createWorkArea(QMainWindow *mainWindow)
     mainWindow->setCentralWidget(workArea);
 }
 
+void MainWindow::openFileDialog()
+{
+    curFileName = QFileDialog::getOpenFileName(this, tr("打开图片"), "E:/waste",
+                                               tr("Images((*.png *.jpg *.jped *.bmp))"));
+    if(curFileName == "") {
+        return;
+    }
+    emit imageFileChangeSignal(curFileName);
+    emit imageFileChangeSignal();
+}
+
+void MainWindow::showNewSelectedImage(QString curFileName)
+{
+    workArea->getImageContainer()->loadImage(curFileName);
+}
+
+void MainWindow::createNewSelectedImageColorBoard()
+{
+    workArea->getColorBoard()->setColorLabels();
+}
+
 void MainWindow::connectSlots()
 {
     connect(workArea->getImageContainer(),
@@ -130,6 +152,17 @@ void MainWindow::connectSlots()
     connect(workArea->getImageContainer(),
             SIGNAL(copySuccessFromImageLabelSignal()),
             SLOT(setHelpTextLabelCopySuccess()));
+    connect(workArea->getImageContainer(),
+            SIGNAL(imageFileChangeSignal(QString)),
+            SLOT(setFileInfoLabelText(QString)));
+
+    connect(openImageByLocalAction,
+            SIGNAL(triggered()),
+            SLOT(openFileDialog()));
+    connect(this, SIGNAL(imageFileChangeSignal(QString)),
+            SLOT(showNewSelectedImage(QString)));
+    connect(this, SIGNAL(imageFileChangeSignal()),
+            SLOT(createNewSelectedImageColorBoard()));
 }
 
 void MainWindow::setShowScaleRatioLabelText(double showScaleRatio)
@@ -173,4 +206,9 @@ void MainWindow::setHelpTextLabelCopySuccess()
 {
     helpTextLabel->setText(tr("复制颜色成功！"));
     helpTextLabel->setStyleSheet("color: green");
+}
+
+void MainWindow::setFileInfoLabelText(QString info)
+{
+    fileInfoLabel->setText(info);
 }

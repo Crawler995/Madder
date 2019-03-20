@@ -15,8 +15,8 @@ ColorLabel::ColorLabel(QColor color, QWidget *parent) : QWidget(parent)
     setColor(color);
 
     QGraphicsDropShadowEffect *colorLabelShadow = new QGraphicsDropShadowEffect(this);
-    colorLabelShadow->setBlurRadius(20.0);
-    colorLabelShadow->setColor(QColor(0, 0, 0, 160));
+    colorLabelShadow->setBlurRadius(16.0);
+    colorLabelShadow->setColor(QColor(0, 0, 0, 100));
     colorLabelShadow->setOffset(3.0);
     colorLabel->setGraphicsEffect(colorLabelShadow);
 }

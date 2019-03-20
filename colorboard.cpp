@@ -7,13 +7,56 @@
 
 ColorBoard::ColorBoard(QWidget *parent) : QWidget(parent)
 {
-    QGridLayout *layout = new QGridLayout(this);
+    layout = new QGridLayout(this);
 
-    computeMainColor();
-
-    QLabel *text = new QLabel(tr("图片主色"), this);
+    text = new QLabel(tr("先打开一张图片。"), this);
     text->setAlignment(Qt::AlignCenter);
     layout->addWidget(text, 0, 0, 1, 3);
+}
+
+QVector<ColorLabel *> ColorBoard::getColorLabels() const
+{
+    return colorLabels;
+}
+
+void ColorBoard::setColorLabels()
+{
+    if(colors.empty()) {
+        createColorLabels();
+    }
+    else {
+        changeColorLabels();
+    }
+}
+
+
+QString ColorBoard::decToHexString(int value)
+{
+    QString res;
+    if(value <= 0x0f) {
+        res += "0";
+    }
+    res += QString::number(value, 16);
+
+    return res;
+}
+
+void ColorBoard::computeMainColor()
+{
+    colors.push_back(QColor("#feb3b0"));
+    colors.push_back(QColor("#3b3c5a"));
+    colors.push_back(QColor("#0d0e23"));
+    colors.push_back(QColor("#706182"));
+    colors.push_back(QColor("#fce4fc"));
+    colors.push_back(QColor("#706182"));
+    colors.push_back(QColor("#706182"));
+}
+
+void ColorBoard::createColorLabels()
+{
+    text->setText(tr("图片主色"));
+
+    computeMainColor();
 
     QVector<QColor>::const_iterator it;
     for(it = colors.constBegin(); it != colors.constEnd(); it++) {
@@ -45,30 +88,27 @@ ColorBoard::ColorBoard(QWidget *parent) : QWidget(parent)
     setLayout(layout);
 }
 
-QVector<ColorLabel *> ColorBoard::getColorLabels() const
+void ColorBoard::changeColorLabels()
 {
-    return colorLabels;
-}
+    colors.clear();
+    computeMainColor();
 
+    if(colorLabels.size() == colors.size()) {
+        QVector<QColor>::const_iterator it;
+        for(it = colors.constBegin(); it != colors.constEnd(); it++) {
+            int index = it - colors.constBegin();
 
-QString ColorBoard::decToHexString(int value)
-{
-    QString res;
-    if(value <= 0x0f) {
-        res += "0";
+            QString colorValue;
+            colorValue += "#";
+            colorValue += decToHexString((*it).red());
+            colorValue += decToHexString((*it).green());
+            colorValue += decToHexString((*it).blue());
+
+            colorValueLabels[index]->setText(colorValue);
+
+            colorLabels[index]->setColor(*it);
+        }
     }
-    res += QString::number(value, 16);
-
-    return res;
-}
-
-void ColorBoard::computeMainColor()
-{
-    colors.push_back(QColor("#2c1213"));
-    colors.push_back(QColor("#910601"));
-    colors.push_back(QColor("#fefdeb"));
-    colors.push_back(QColor("#b41100"));
-    colors.push_back(QColor("#601a1c"));
 }
 
 void ColorBoard::sendCopySuccessSignal()
