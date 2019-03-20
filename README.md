@@ -1,2 +1,3 @@
 # Madder
-A color tool for designer written by Qt C++.
+A color tool for designer written by Qt C++.<br>
+Still developing...
