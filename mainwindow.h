@@ -8,8 +8,10 @@
 #include <QStatusBar>
 #include <QToolBar>
 #include <QMouseEvent>
+#include <QProgressDialog>
 
 #include "workarea.h"
+#include "imagedownloader.h"
 
 class MainWindow : public QMainWindow
 {
@@ -29,12 +31,20 @@ private:
     WorkArea *workArea;
     QString curFileName;
 
+    QProgressDialog *progressDialog;
+    QNetworkReply *reply;
+    ImageDownloader *downloader;
+
     void createMenu(QMainWindow *mainWindow);
     void createStatusBar(QMainWindow *mainWindow);
     void createToolBar(QMainWindow *mainWindow);
     void createWorkArea(QMainWindow *mainWindow);
 
     void connectSlots();
+
+    void showNewSelectedImage(QString curFileName);
+    void createNewSelectedImageColorBoard();
+    void beginDownload(QString urlString);
 
 public slots:
     void setShowScaleRatioLabelText(double showScaleRatio);
@@ -46,12 +56,10 @@ public slots:
     void setFileInfoLabelText(QString info);
 
     void openFileDialog();
-    void showNewSelectedImage(QString curFileName);
-    void createNewSelectedImageColorBoard();
+    void openDownloadDialog();
+    void openDownloadImage();
 
-signals:
-    void imageFileChangeSignal(QString curFileName);
-    void imageFileChangeSignal();
+    void updateDownloadProgress(qint64 alreadyDownloadSize, qint64 totalSize);
 };
 
 #endif // MAINWINDOW_H

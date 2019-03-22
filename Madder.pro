@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -28,13 +28,16 @@ SOURCES += main.cpp\
     workarea.cpp \
     imagecontainer.cpp \
     colorboard.cpp \
-    colorlabel.cpp
+    colorlabel.cpp \
+    util.cpp
 
 HEADERS  += mainwindow.h \
     workarea.h \
     imagecontainer.h \
     colorboard.h \
-    colorlabel.h
+    colorlabel.h \
+    util.h \
+    imagedownloader.h
 
 RESOURCES += \
     madder.qrc

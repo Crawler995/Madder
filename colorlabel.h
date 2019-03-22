@@ -17,7 +17,7 @@ protected:
 private:
     QLabel *colorLabel;
     QColor color;
-    QString decToHexString(int value);
+
 signals:
     void copySuccessSignalFromColorLabelSignal();
 };

@@ -1,4 +1,5 @@
 #include "colorlabel.h"
+#include "util.h"
 #include <QColor>
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
@@ -32,9 +33,7 @@ void ColorLabel::mousePressEvent(QMouseEvent *event)
 
     QClipboard *clipBoard = QApplication::clipboard();
 
-    QString colorValue;
-    colorValue += "#" + decToHexString(color.red()) + decToHexString(color.green()) +
-            decToHexString(color.blue());
+    QString colorValue = qcolorToString(color);
 
     clipBoard->setText(colorValue);
 }
@@ -47,15 +46,4 @@ void ColorLabel::setColor(QColor color)
     colorLabel->setPalette(palette);
 
     this->color = color;
-}
-
-QString ColorLabel::decToHexString(int value)
-{
-    QString res;
-    if(value <= 0x0f) {
-        res += "0";
-    }
-    res += QString::number(value, 16);
-
-    return res;
 }

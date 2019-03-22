@@ -1,5 +1,6 @@
 #include "colorboard.h"
 #include "colorlabel.h"
+#include "util.h"
 #include <QLabel>
 #include <QGridLayout>
 #include <QVector>
@@ -19,6 +20,12 @@ QVector<ColorLabel *> ColorBoard::getColorLabels() const
     return colorLabels;
 }
 
+/**
+ * @brief ColorBoard::setColorLabels
+ *
+ * If the color vector is empty (the first time to load image), create all member of the class.
+ * Else change these relating variables.
+ */
 void ColorBoard::setColorLabels()
 {
     if(colors.empty()) {
@@ -29,18 +36,12 @@ void ColorBoard::setColorLabels()
     }
 }
 
-
-QString ColorBoard::decToHexString(int value)
-{
-    QString res;
-    if(value <= 0x0f) {
-        res += "0";
-    }
-    res += QString::number(value, 16);
-
-    return res;
-}
-
+/**
+ * @brief ColorBoard::computeMainColor
+ *
+ * The core algoritem of compute the main color of the image.
+ * MMCQ (Modified Median Cut Quantization)
+ */
 void ColorBoard::computeMainColor()
 {
     colors.push_back(QColor("#feb3b0"));
@@ -52,6 +53,11 @@ void ColorBoard::computeMainColor()
     colors.push_back(QColor("#706182"));
 }
 
+/**
+ * @brief ColorBoard::createColorLabels
+ *
+ * create these relating variables and add them to a grid layout.
+ */
 void ColorBoard::createColorLabels()
 {
     text->setText(tr("图片主色"));
@@ -71,11 +77,7 @@ void ColorBoard::createColorLabels()
                 SLOT(sendCopySuccessSignal()));
 
         QLabel *colorValueLabel = new QLabel(this);
-        QString colorValue;
-        colorValue += "#";
-        colorValue += decToHexString((*it).red());
-        colorValue += decToHexString((*it).green());
-        colorValue += decToHexString((*it).blue());
+        QString colorValue = qcolorToString(*it);
 
         colorValueLabel->setText(colorValue);
         colorValueLabel->setAlignment(Qt::AlignCenter);
@@ -88,6 +90,13 @@ void ColorBoard::createColorLabels()
     setLayout(layout);
 }
 
+/**
+ * @brief ColorBoard::changeColorLabels
+ *
+ * If the color label number doesn't change, change the relating variables, it's easy.
+ * Thinking about the condition that users change the color label number in the setting,
+ * we should do more actions.
+ */
 void ColorBoard::changeColorLabels()
 {
     colors.clear();
@@ -98,11 +107,7 @@ void ColorBoard::changeColorLabels()
         for(it = colors.constBegin(); it != colors.constEnd(); it++) {
             int index = it - colors.constBegin();
 
-            QString colorValue;
-            colorValue += "#";
-            colorValue += decToHexString((*it).red());
-            colorValue += decToHexString((*it).green());
-            colorValue += decToHexString((*it).blue());
+            QString colorValue = qcolorToString(*it);
 
             colorValueLabels[index]->setText(colorValue);
 

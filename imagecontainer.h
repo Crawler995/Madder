@@ -31,7 +31,6 @@ private:
     int imageAreaWidth, imageAreaHeight;
 
     QColor getPixelColor(int x, int y);
-    QString decToHexString(int value);
     void computeFileIntoContainerScaleRatio();
 signals:
     void showScaleRatioChangeSignal(double showScaleRatio);

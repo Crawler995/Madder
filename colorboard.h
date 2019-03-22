@@ -23,7 +23,6 @@ private:
     QVector<ColorLabel*> colorLabels;
     QLabel *text;
 
-    QString decToHexString(int value);
     void computeMainColor();
     void createColorLabels();
     void changeColorLabels();

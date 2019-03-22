@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "imagedownloader.h"
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
@@ -11,6 +12,11 @@
 #include <QGraphicsDropShadowEffect>
 #include <QVector>
 #include <QFileDialog>
+#include <QInputDialog>
+#include <QDialog>
+#include <QProgressDialog>
+#include <QNetworkReply>
+#include <QTime>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -28,11 +34,16 @@ MainWindow::MainWindow(QWidget *parent)
     connectSlots();
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow(){}
 
-}
-
+/**
+ * @brief MainWindow::createMenu
+ * @param mainWindow the parent mainWindow.
+ * Originally it can be omitted and use "this" in the function, but it will cause name conflict.
+ * So use the parameter to avoid it.
+ *
+ * Create all menu of the application.
+ */
 void MainWindow::createMenu(QMainWindow *mainWindow)
 {
     menuBar = mainWindow->menuBar();
@@ -61,6 +72,12 @@ void MainWindow::createMenu(QMainWindow *mainWindow)
     authorAction = aboutMenu->addAction(QIcon(":/icon/icon/user.png"), tr("作者"));
 }
 
+/**
+ * @brief MainWindow::createStatusBar
+ * @param mainWindow the parent mainWindow. Explanation same as above.
+ *
+ * Create the status bar and all label in it.
+ */
 void MainWindow::createStatusBar(QMainWindow *mainWindow)
 {
     statusBar = mainWindow->statusBar();
@@ -84,6 +101,12 @@ void MainWindow::createStatusBar(QMainWindow *mainWindow)
     statusBar->addWidget(showScaleRatioLabel, 2);
 }
 
+/**
+ * @brief MainWindow::createToolBar
+ * @param mainWindow the parent mainWindow. Explanation same as above.
+ *
+ * Create tool bar which corresponds the menu.
+ */
 void MainWindow::createToolBar(QMainWindow *mainWindow)
 {
     toolBar = new QToolBar(this);
@@ -102,12 +125,27 @@ void MainWindow::createToolBar(QMainWindow *mainWindow)
     toolBar->addAction(authorAction);
 }
 
+/**
+ * @brief MainWindow::createWorkArea
+ * @param mainWindow the parent mainWindow. Explanation same as above.
+ *
+ * Create work area and make it be the central widget. Work area includes the image container and
+ * color board which are the core widget of the application.
+ */
 void MainWindow::createWorkArea(QMainWindow *mainWindow)
 {
     workArea = new WorkArea(mainWindow);
     mainWindow->setCentralWidget(workArea);
 }
 
+/**
+ * @brief MainWindow::openFileDialog
+ *
+ * When click the button "open local file", the application will open a file dialog to let users select images.
+ * If users cancel it, the file dialog will return a null string and the function doesn't need to
+ * do anything more.
+ * If users select a image, the application will show it and create the color board of it.
+ */
 void MainWindow::openFileDialog()
 {
     curFileName = QFileDialog::getOpenFileName(this, tr("打开图片"), "E:/waste",
@@ -115,20 +153,122 @@ void MainWindow::openFileDialog()
     if(curFileName == "") {
         return;
     }
-    emit imageFileChangeSignal(curFileName);
-    emit imageFileChangeSignal();
+
+    showNewSelectedImage(curFileName);
+    createNewSelectedImageColorBoard();
 }
 
+/**
+ * @brief MainWindow::openDownloadDialog
+ *
+ * When click the button "open online image", the application will open a dialog to let users
+ * input the image url.
+ * When click the determine button, the application will begin to download the image.
+ */
+void MainWindow::openDownloadDialog()
+{
+    QInputDialog dialog(this);
+    dialog.setWindowTitle(tr("图片URL"));
+    dialog.setLabelText(tr("输入图片URL（即链接）"));
+    dialog.setInputMode(QInputDialog::TextInput);
+    dialog.setOkButtonText(tr("确定"));
+    dialog.setCancelButtonText(tr("取消"));
+
+    if(dialog.exec() == QInputDialog::Accepted) {
+        beginDownload(dialog.textValue());
+    }
+}
+
+/**
+ * @brief MainWindow::openDownloadImage
+ *
+ * It's a slot function.
+ * When the image downloads and is saved successfully, the downloader will send a signal,
+ * and trigger the slot function, to show the download image and create the color board of it.
+ */
+void MainWindow::openDownloadImage()
+{
+    progressDialog->close();
+
+    showNewSelectedImage("download.jpg");
+    createNewSelectedImageColorBoard();
+}
+
+/**
+ * @brief MainWindow::updateDownloadProgress
+ * @param alreadyDownloadSize the size already downloads.
+ * @param totalSize the file size.
+ *
+ * It's a slot function.
+ * When the download is doing, the data reply will send a signal, and trigger the slot function,
+ * to update the download progress bar.
+ */
+void MainWindow::updateDownloadProgress(qint64 alreadyDownloadSize, qint64 totalSize)
+{
+    QString labelText;
+    labelText += "下载图片中..." + QString::number(alreadyDownloadSize / 1000) + "kb / " +
+            QString::number(totalSize / 1000) + "kb";
+    progressDialog->setLabelText(labelText);
+    progressDialog->setValue(static_cast<int>(100.0 * alreadyDownloadSize / totalSize));
+}
+
+/**
+ * @brief MainWindow::showNewSelectedImage
+ * @param curFileName the name of file which will be opened.
+ *
+ * Show the image in the image container.
+ */
 void MainWindow::showNewSelectedImage(QString curFileName)
 {
     workArea->getImageContainer()->loadImage(curFileName);
 }
 
+/**
+ * @brief MainWindow::createNewSelectedImageColorBoard
+ *
+ * create the color board of the new load image.
+ */
 void MainWindow::createNewSelectedImageColorBoard()
 {
     workArea->getColorBoard()->setColorLabels();
 }
 
+/**
+ * @brief MainWindow::beginDownload
+ * @param urlString the image url.
+ *
+ * Create a progress dialog and a image downloader.
+ * If the progress dialog pointer is not null (not first to open image by url, the pointer will point
+ * the last progress dialog. So delete it before create a new progress dialog to avoid memory leak.
+ */
+void MainWindow::beginDownload(QString urlString)
+{
+    if(progressDialog != nullptr) {
+        delete progressDialog;
+        delete downloader;
+    }
+
+    progressDialog = new QProgressDialog(tr("下载图片中..."),
+                                         tr("取消"),
+                                         0, 100, this);
+    progressDialog->setWindowTitle(tr("下载图片"));
+    progressDialog->show();
+
+    downloader = new ImageDownloader(urlString);
+
+    connect(downloader, SIGNAL(downloadFinishedAndSaved()),
+            SLOT(openDownloadImage()));
+
+    reply = downloader->beginDownload();
+
+    connect(reply, SIGNAL(downloadProgress(qint64,qint64)),
+            SLOT(updateDownloadProgress(qint64,qint64)));
+}
+
+/**
+ * @brief MainWindow::connectSlots
+ * connect a lot of signals and slots(not all).
+ */
 void MainWindow::connectSlots()
 {
     connect(workArea->getImageContainer(),
@@ -159,12 +299,19 @@ void MainWindow::connectSlots()
     connect(openImageByLocalAction,
             SIGNAL(triggered()),
             SLOT(openFileDialog()));
-    connect(this, SIGNAL(imageFileChangeSignal(QString)),
-            SLOT(showNewSelectedImage(QString)));
-    connect(this, SIGNAL(imageFileChangeSignal()),
-            SLOT(createNewSelectedImageColorBoard()));
+    connect(openImageByUrlAction,
+            SIGNAL(triggered()),
+            SLOT(openDownloadDialog()));
 }
 
+/**
+ * @brief MainWindow::setShowScaleRatioLabelText
+ * @param showScaleRatio the show scale ratio depends on the mouse wheel.
+ *
+ * It's a slot function.
+ * When the users scroll the mouse wheel, the show scale ratio changes, send a signal, trigger
+ * the function to change the ratio text in status bar.
+ */
 void MainWindow::setShowScaleRatioLabelText(double showScaleRatio)
 {
     int percent = static_cast<int>(showScaleRatio * 100);
@@ -174,6 +321,16 @@ void MainWindow::setShowScaleRatioLabelText(double showScaleRatio)
     showScaleRatioLabel->setText(text);
 }
 
+/**
+ * @brief MainWindow::setCurInfoLabelText
+ * @param x the mouse cursor x pos.
+ * @param y the mouse cursor y pos.
+ * @param color the color of the point which mouse cursor points.
+ *
+ * It's a slot function.
+ * When the mouse cursor is hovered in the image, the image container will send a signal, trigger
+ * the function to change the information in status bar.
+ */
 void MainWindow::setCurInfoLabelText(int x, int y, QString &color)
 {
     QString info;
@@ -182,6 +339,14 @@ void MainWindow::setCurInfoLabelText(int x, int y, QString &color)
     curInfoLabel->setText(info);
 }
 
+/**
+ * @brief MainWindow::setColorValueLabel
+ * @param color the color of the point which mouse cursor points.
+ *
+ * It's a slot function.
+ * When the mouse cursor is hovered in the image, the image container will send a signal, trigger
+ * the function to change the color label background color in status bar.
+ */
 void MainWindow::setColorValueLabel(QColor &color)
 {
     QPalette palette;
@@ -190,24 +355,55 @@ void MainWindow::setColorValueLabel(QColor &color)
     colorValueLabel->setPalette(palette);
 }
 
+/**
+ * @brief MainWindow::setHelpTextLabelCursorInImage
+ *
+ * It's a slot function.
+ * When the mouse cursor is hovered in the image, the image container will send a signal, trigger
+ * the function to change the help text in status bar and prompt users that can double click the
+ * image to copy the color value to the clipboard.
+ */
 void MainWindow::setHelpTextLabelCursorInImage()
 {
     helpTextLabel->setText(tr("双击将鼠标所指点颜色复制到剪贴板。"));
     helpTextLabel->setStyleSheet("color: black");
 }
 
+/**
+ * @brief MainWindow::setHelpTextLabelCursorOutImage
+ *
+ * It's a slot function.
+ * When the mouse cursor isn't hovered in the image, the image container will send a signal, trigger
+ * the function to change the help text in status bar and prompt users that can click the color label
+ * in color board to copy the color value to the clipboard.
+ */
 void MainWindow::setHelpTextLabelCursorOutImage()
 {
     helpTextLabel->setText(tr("单击右侧色板将颜色复制到剪贴板。"));
     helpTextLabel->setStyleSheet("color: black");
 }
 
+/**
+ * @brief MainWindow::setHelpTextLabelCopySuccess
+ *
+ * It's a slot function.
+ * When the mouse double click in the color label in the color board, the color board will send a signal,
+ * trigger the function to change the help text in status bar and prompt users that copy successfully.
+ */
 void MainWindow::setHelpTextLabelCopySuccess()
 {
     helpTextLabel->setText(tr("复制颜色成功！"));
     helpTextLabel->setStyleSheet("color: green");
 }
 
+/**
+ * @brief MainWindow::setFileInfoLabelText
+ * @param info the file name and size.
+ *
+ * It's a slot function.
+ * When the image loads, the image container will send a signal, trigger the function to change the
+ * label text in status bar and prompt users the file name and size.
+ */
 void MainWindow::setFileInfoLabelText(QString info)
 {
     fileInfoLabel->setText(info);
