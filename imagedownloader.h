@@ -9,20 +9,52 @@
 #include <QByteArray>
 #include <QPixmap>
 #include <QFile>
+#include <QVariant>
+#include <QDebug>
 
+/**
+ * @brief The ImageDownloader class
+ *
+ * The class provides some operations of download images.
+ *
+ * If the class is transferred, it will be moved in another thread which is different from the main thread,
+ * in order that avoid to block the progress dialog. If the image downloader runs in main thread,
+ * there will be serval seconds block that after the progress dialog appears and before the progress bar appears.
+ * (According to the console, I think the serval seconds may be used to initialize the network service.)
+ */
 class ImageDownloader: public QObject
 {
     Q_OBJECT
 public:
-    ImageDownloader(QString urlString) {
-        this->urlString = urlString;
+    /**
+     * @brief ImageDownloader
+     * @param parent the mainWindow.
+     *
+     * The paramter "parent" is used to connect the signal (in this class) and slot (in main window).
+     * Because they cross between two threads, according to much debug I find that maybe the connect
+     * operation can only be done in this class.
+     */
+    ImageDownloader(QMainWindow *parent) {
+        this->parent = parent;
     }
 
-    QNetworkReply* beginDownload() {
-        QUrl url(urlString);
-        manager = new QNetworkAccessManager(this);
-        QNetworkRequest request;
+    QNetworkAccessManager *manager;
+    QNetworkReply *downloadReply;
+    QString urlString;
+    QMainWindow *parent;
 
+public slots:
+    /**
+     * @brief beginDownload
+     * @param urlString the image url string.
+     *
+     * The slot is transferred by a signal in main thread.
+     */
+    void beginDownload(QString urlString) {
+        this->urlString = urlString;
+        manager = new QNetworkAccessManager();
+        QUrl url(urlString);
+        QNetworkRequest request;
         request.setUrl(url);
 
         connect(manager, SIGNAL(finished(QNetworkReply*)), this,
@@ -30,31 +62,66 @@ public:
 
         downloadReply = manager->get(request);
 
-        return downloadReply;
+        connect(downloadReply, SIGNAL(downloadProgress(qint64,qint64)), parent,
+                SLOT(updateDownloadProgress(qint64,qint64)), Qt::QueuedConnection);
     }
 
-    QNetworkAccessManager *manager;
-    QNetworkReply *downloadReply;
-    QString urlString;
+private:
+    /**
+     * @brief getFileName
+     * @param reply
+     * @return the file name string.
+     *
+     * According to the download reply, return the file name.
+     * If the name is too long, it will be named "name_long_meaningless".
+     */
+    QString getFileName(QNetworkReply* reply) {
+        QString contentDisposition = reply->rawHeader("Content-Disposition");
+        int index = contentDisposition.indexOf("filename=");
+        QString fileName = contentDisposition.mid(index + 9);
+
+        if(fileName.isEmpty()) {
+            QUrl url(urlString);
+            QFileInfo fileInfo(url.path());
+            fileName = fileInfo.fileName();
+        }
+
+        if(fileName.length() > 20) {
+            fileName = "name_long_meaningless";
+        }
+
+        return fileName;
+    }
 
 private slots:
+    /**
+     * @brief downloadFinished
+     * @param reply
+     *
+     * If the image download finished successfully or appeared error, the slots will be triggered.
+     * If download successfully, send the "downloadFinishedAndSaved" signal to the main thread.
+     * If there is a error, output the error information to the console. (Develop later)
+     */
     void downloadFinished(QNetworkReply* reply) {
         if(reply->error() == QNetworkReply::NoError) {
-           QByteArray bytes = reply->readAll();
+            QByteArray bytes = reply->readAll();
+            QString fileName = getFileName(reply);
+            QFile file(fileName);
 
-           QFile file("download.jpg");
-           if (file.open(QIODevice::WriteOnly))
-           {
+            if (file.open(QIODevice::WriteOnly)) {
                file.write(bytes);
-           }
-           file.close();
+            }
+            file.close();
 
-           emit downloadFinishedAndSaved();
+            emit downloadFinishedAndSaved(fileName);
+        }
+        else {
+            qDebug() << "download error.";
         }
     }
 
 signals:
-    void downloadFinishedAndSaved();
+    void downloadFinishedAndSaved(QString fileName);
 };
 
 #endif // IMAGEDOWNLOADER_H

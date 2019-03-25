@@ -233,6 +233,8 @@ void ImageContainer::loadImage(QString fileName)
         delete image;
     }
     image = new QImage(fileName);
+    qDebug() << image->isNull();
+
     imageLabel->setPixmap(QPixmap::fromImage(*image));
 
     imageAreaWidth = imageArea->viewport()->geometry().width();

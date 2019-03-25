@@ -16,7 +16,7 @@
 #include <QDialog>
 #include <QProgressDialog>
 #include <QNetworkReply>
-#include <QTime>
+#include <QThread>
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -149,7 +149,7 @@ void MainWindow::createWorkArea(QMainWindow *mainWindow)
 void MainWindow::openFileDialog()
 {
     curFileName = QFileDialog::getOpenFileName(this, tr("打开图片"), "E:/waste",
-                                               tr("Images((*.png *.jpg *.jped *.bmp))"));
+                                               tr("Images((*.png *.jpg *.jpeg *.bmp))"));
     if(curFileName == "") {
         return;
     }
@@ -185,12 +185,21 @@ void MainWindow::openDownloadDialog()
  * It's a slot function.
  * When the image downloads and is saved successfully, the downloader will send a signal,
  * and trigger the slot function, to show the download image and create the color board of it.
+ * Before load the image, delete the downloader, downloadThead, progressDialog, in order to avoid
+ * the memory leak.
  */
-void MainWindow::openDownloadImage()
+void MainWindow::openDownloadImage(QString fileName)
 {
-    progressDialog->close();
+    delete downloader;
 
-    showNewSelectedImage("download.jpg");
+    downloadThread->exit();
+    downloadThread->wait();
+    delete downloadThread;
+
+    progressDialog->close();
+    delete progressDialog;
+
+    showNewSelectedImage(fileName);
     createNewSelectedImageColorBoard();
 }
 
@@ -238,31 +247,38 @@ void MainWindow::createNewSelectedImageColorBoard()
  * @param urlString the image url.
  *
  * Create a progress dialog and a image downloader.
- * If the progress dialog pointer is not null (not first to open image by url, the pointer will point
- * the last progress dialog. So delete it before create a new progress dialog to avoid memory leak.
+ * The image downloader will be moved to another thread, in order to avoid a several seconds block that
+ * after the progress dialog appears and before the progress bar appears.
+ * According to the console, I think the serval seconds may be used to initialize the network service.
  */
 void MainWindow::beginDownload(QString urlString)
 {
-    if(progressDialog != nullptr) {
-        delete progressDialog;
-        delete downloader;
-    }
-
-    progressDialog = new QProgressDialog(tr("下载图片中..."),
-                                         tr("取消"),
-                                         0, 100, this);
+    progressDialog = new QProgressDialog(this);
     progressDialog->setWindowTitle(tr("下载图片"));
+    progressDialog->setLabelText(tr("下载图片中..."));
+    progressDialog->setCancelButtonText(tr("取消"));
+    progressDialog->setMinimumDuration(500);
+
+    Qt::WindowFlags flag = Qt::Dialog;
+    flag |= Qt::WindowCloseButtonHint;
+    progressDialog->setWindowFlags(flag);
+
     progressDialog->show();
+    progressDialog->setValue(0);
 
-    downloader = new ImageDownloader(urlString);
+    downloadThread = new QThread();
+    downloader = new ImageDownloader(this);
+    downloader->moveToThread(downloadThread);
 
-    connect(downloader, SIGNAL(downloadFinishedAndSaved()),
-            SLOT(openDownloadImage()));
+    connect(this, SIGNAL(beginDownLoadSignal(QString)),
+            downloader, SLOT(beginDownload(QString)), Qt::QueuedConnection);
 
-    reply = downloader->beginDownload();
+    downloadThread->start();
 
-    connect(reply, SIGNAL(downloadProgress(qint64,qint64)),
-            SLOT(updateDownloadProgress(qint64,qint64)));
+    emit beginDownLoadSignal(urlString);
+
+    connect(downloader, SIGNAL(downloadFinishedAndSaved(QString)), this,
+            SLOT(openDownloadImage(QString)), Qt::QueuedConnection);
 }
 
 /**

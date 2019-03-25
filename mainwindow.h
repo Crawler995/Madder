@@ -9,6 +9,7 @@
 #include <QToolBar>
 #include <QMouseEvent>
 #include <QProgressDialog>
+#include <QThread>
 
 #include "workarea.h"
 #include "imagedownloader.h"
@@ -32,8 +33,8 @@ private:
     QString curFileName;
 
     QProgressDialog *progressDialog;
-    QNetworkReply *reply;
     ImageDownloader *downloader;
+    QThread *downloadThread;
 
     void createMenu(QMainWindow *mainWindow);
     void createStatusBar(QMainWindow *mainWindow);
@@ -57,9 +58,11 @@ public slots:
 
     void openFileDialog();
     void openDownloadDialog();
-    void openDownloadImage();
+    void openDownloadImage(QString fileName);
 
     void updateDownloadProgress(qint64 alreadyDownloadSize, qint64 totalSize);
+signals:
+    void beginDownLoadSignal(QString urlString);
 };
 
 #endif // MAINWINDOW_H
