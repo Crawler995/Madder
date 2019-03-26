@@ -36,6 +36,8 @@ private:
     ImageDownloader *downloader;
     QThread *downloadThread;
 
+    void setCustomStyle();
+
     void createMenu(QMainWindow *mainWindow);
     void createStatusBar(QMainWindow *mainWindow);
     void createToolBar(QMainWindow *mainWindow);
@@ -59,6 +61,9 @@ public slots:
     void openFileDialog();
     void openDownloadDialog();
     void openDownloadImage(QString fileName);
+
+    void openOpenImageFailedMessageBox();
+    void openDownloadImageFailedMessageBox();
 
     void updateDownloadProgress(qint64 alreadyDownloadSize, qint64 totalSize);
 signals:

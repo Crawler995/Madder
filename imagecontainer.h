@@ -40,6 +40,7 @@ signals:
     void cursorOutImageSignal();
     void copySuccessFromImageLabelSignal();
     void imageFileChangeSignal(QString info);
+    void openImageFailedSignal();
 };
 
 #endif // IMAGECONTAINER_H

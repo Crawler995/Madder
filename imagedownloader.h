@@ -73,7 +73,6 @@ private:
      * @return the file name string.
      *
      * According to the download reply, return the file name.
-     * If the name is too long, it will be named "name_long_meaningless".
      */
     QString getFileName(QNetworkReply* reply) {
         QString contentDisposition = reply->rawHeader("Content-Disposition");
@@ -86,10 +85,6 @@ private:
             fileName = fileInfo.fileName();
         }
 
-        if(fileName.length() > 20) {
-            fileName = "name_long_meaningless";
-        }
-
         return fileName;
     }
 
@@ -99,8 +94,9 @@ private slots:
      * @param reply
      *
      * If the image download finished successfully or appeared error, the slots will be triggered.
-     * If download successfully, send the "downloadFinishedAndSaved" signal to the main thread.
-     * If there is a error, output the error information to the console. (Develop later)
+     * If download successfully, send the "downloadFinishedAndSavedSignal" signal to the main thread.
+     * If there is a error, send the "downloadImageFailedSignal" signal to the main thread to open
+     * a messagebox to show that download failed.
      */
     void downloadFinished(QNetworkReply* reply) {
         if(reply->error() == QNetworkReply::NoError) {
@@ -113,15 +109,16 @@ private slots:
             }
             file.close();
 
-            emit downloadFinishedAndSaved(fileName);
+            emit downloadFinishedAndSavedSignal(fileName);
         }
         else {
-            qDebug() << "download error.";
+            emit downloadImageFailedSignal();
         }
     }
 
 signals:
-    void downloadFinishedAndSaved(QString fileName);
+    void downloadFinishedAndSavedSignal(QString fileName);
+    void downloadImageFailedSignal();
 };
 
 #endif // IMAGEDOWNLOADER_H

@@ -37,13 +37,6 @@ ImageContainer::ImageContainer(QWidget *parent) : QWidget(parent)
     imageLabel->installEventFilter(this);
     imageLabel->setMouseTracking(true);
 
-    // add shadow
-    QGraphicsDropShadowEffect *imageLabelShadow = new QGraphicsDropShadowEffect(this);
-    imageLabelShadow->setBlurRadius(40.0);
-    imageLabelShadow->setColor(QColor(0, 0, 0, 160));
-    imageLabelShadow->setOffset(8.0);
-    imageLabel->setGraphicsEffect(imageLabelShadow);
-
     /*
      * It means that put a image file in the image container, the image will scale how many times.
      *
@@ -233,7 +226,11 @@ void ImageContainer::loadImage(QString fileName)
         delete image;
     }
     image = new QImage(fileName);
-    qDebug() << image->isNull();
+
+    if(image->isNull()) {
+        emit openImageFailedSignal();
+        return;
+    }
 
     imageLabel->setPixmap(QPixmap::fromImage(*image));
 
@@ -246,9 +243,16 @@ void ImageContainer::loadImage(QString fileName)
     QFileInfo fi(fileName);
     QString info;
 
-    info += fi.fileName() + ", ";
+    if(fi.fileName().length() > 15) {
+        info += "..., ";
+    }
+    else {
+        info += fi.fileName() + ", ";
+    }
+
     info += QString::number(imageLabel->pixmap()->size().width()) + "*";
     info += QString::number(imageLabel->pixmap()->size().height());
 
     emit imageFileChangeSignal(info);
+    emit showScaleRatioChangeSignal(showScaleRatio);
 }

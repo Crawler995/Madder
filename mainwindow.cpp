@@ -1,5 +1,8 @@
 #include "mainwindow.h"
 #include "imagedownloader.h"
+#include "util.h"
+#include <QDesktopWidget>
+#include <QApplication>
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
@@ -15,14 +18,20 @@
 #include <QInputDialog>
 #include <QDialog>
 #include <QProgressDialog>
+#include <QMessageBox>
 #include <QNetworkReply>
 #include <QThread>
+#include <QPalette>
 #include <QDebug>
+
+#define SCREEN_WIDTH QApplication::desktop()->screenGeometry().width()
+#define SCREEN_HEIGHT QApplication::desktop()->screenGeometry().height()
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    resize(960, 540);
+    resize(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+
     createMenu(this);
     createStatusBar(this);
     createWorkArea(this);
@@ -32,9 +41,49 @@ MainWindow::MainWindow(QWidget *parent)
     workArea->setMouseTracking(true);
 
     connectSlots();
+
+    setCustomStyle();
 }
 
 MainWindow::~MainWindow(){}
+
+void MainWindow::setCustomStyle()
+{
+    QString styles;
+    styles += "QMainWindow{background-color: #ffffff;}"
+
+              "QMenuBar{background-color: #e8e8e8; border:none; padding: 0px;}"
+              "QMenuBar::item{background-color: #e8e8e8; padding: 3px 10px 3px 10px;}"
+              "QMenuBar::item:selected{background-color: #ffffff;}"
+
+              "QMenu{background-color: #ffffff;}"
+              "QMenu::item{background-color: #ffffff; padding: 3px 30px 3px 30px;}"
+              "QMenu::item:selected{background-color: #e8e8e8; color: #000000;}"
+              "QMenu::icon{padding-left: 8px;}"
+
+              "QToolBar{border: 2px solid #e8e8e8; padding: 0px;}"
+              "QToolButton{padding: 3px 5px 3px 5px; background-color: #ffffff;border: none;}"
+              "QToolButton:hover{background-color: #e8e8e8;}"
+
+              "QScrollArea{background-color: #ffffff; border: 2px solid #e8e8e8;}"
+
+              "QStatusBar{background-color: #e8e8e8;}"
+              "QStatusBar::item{border: none;}"
+
+              "QPushButton{background-color: #ffffff; border: 2px solid #e8e8e8; width: 76px; height: 25px;}"
+              "QPushButton:hover{background-color: #e8e8e8;}"
+
+              "QDialog{background-color: #ffffff;}"
+
+              "QLineEdit{background-color: #ffffff; border: 2px solid #e8e8e8;}"
+
+              "QProgressBar{background-color: #ffffff; border: 2px solid #e8e8e8; text-align: center;}"
+              "QProgressBar:chunk{background-color: #e8e8e8;}"
+
+              "QMessageBox{background-color: #ffffff;}";
+
+    setStyleSheet(styles);
+}
 
 /**
  * @brief MainWindow::createMenu
@@ -84,7 +133,7 @@ void MainWindow::createStatusBar(QMainWindow *mainWindow)
 
     fileInfoLabel = new QLabel(tr(""), statusBar);
     curInfoLabel = new QLabel(tr(""), statusBar);
-    showScaleRatioLabel = new QLabel(tr("缩放：100%"), statusBar);
+    showScaleRatioLabel = new QLabel(tr(""), statusBar);
     colorValueLabel = new QLabel(statusBar);
     helpTextLabel = new QLabel(tr(""));
 
@@ -110,6 +159,7 @@ void MainWindow::createStatusBar(QMainWindow *mainWindow)
 void MainWindow::createToolBar(QMainWindow *mainWindow)
 {
     toolBar = new QToolBar(this);
+    toolBar->setMovable(false);
     mainWindow->addToolBar(Qt::TopToolBarArea, toolBar);
 
     toolBar->addAction(openImageByLocalAction);
@@ -174,6 +224,12 @@ void MainWindow::openDownloadDialog()
     dialog.setOkButtonText(tr("确定"));
     dialog.setCancelButtonText(tr("取消"));
 
+    Qt::WindowFlags flag = Qt::Dialog;
+    flag |= Qt::WindowCloseButtonHint;
+    dialog.setWindowFlags(flag);
+
+    dialog.resize(SCREEN_WIDTH / 4, SCREEN_HEIGHT / 6);
+
     if(dialog.exec() == QInputDialog::Accepted) {
         beginDownload(dialog.textValue());
     }
@@ -201,6 +257,48 @@ void MainWindow::openDownloadImage(QString fileName)
 
     showNewSelectedImage(fileName);
     createNewSelectedImageColorBoard();
+}
+
+/**
+ * @brief MainWindow::openOpenImageFailedMessageBox
+ *
+ * It's a slot function.
+ * If opening image failed, create a messagebox to show that open failed.
+ */
+void MainWindow::openOpenImageFailedMessageBox()
+{
+    QMessageBox openImageFailedMessageBox(this);
+    openImageFailedMessageBox.setText(tr("打开图片失败。"));
+    openImageFailedMessageBox.setInformativeText(tr("可能是图片格式错误，请重试。"));
+    openImageFailedMessageBox.setIcon(QMessageBox::Critical);
+
+    openImageFailedMessageBox.exec();
+}
+
+/**
+ * @brief MainWindow::openDownloadImageFailedMessageBox
+ *
+ * It's a slot function.
+ * If download failed, the download thread will send a signal to main thread, and trigger this
+ * function, to create a messagebox to show that download failed.
+ */
+void MainWindow::openDownloadImageFailedMessageBox()
+{
+    delete downloader;
+
+    downloadThread->exit();
+    downloadThread->wait();
+    delete downloadThread;
+
+    progressDialog->close();
+    delete progressDialog;
+
+    QMessageBox openImageFailedMessageBox(this);
+    openImageFailedMessageBox.setText(tr("下载图片失败。"));
+    openImageFailedMessageBox.setInformativeText(tr("可能是URL错误或网络问题，请重试。"));
+    openImageFailedMessageBox.setIcon(QMessageBox::Critical);
+
+    openImageFailedMessageBox.exec();
 }
 
 /**
@@ -277,8 +375,10 @@ void MainWindow::beginDownload(QString urlString)
 
     emit beginDownLoadSignal(urlString);
 
-    connect(downloader, SIGNAL(downloadFinishedAndSaved(QString)), this,
+    connect(downloader, SIGNAL(downloadFinishedAndSavedSignal(QString)), this,
             SLOT(openDownloadImage(QString)), Qt::QueuedConnection);
+    connect(downloader, SIGNAL(downloadImageFailedSignal()),
+            SLOT(openDownloadImageFailedMessageBox()), Qt::QueuedConnection);
 }
 
 /**
@@ -311,6 +411,9 @@ void MainWindow::connectSlots()
     connect(workArea->getImageContainer(),
             SIGNAL(imageFileChangeSignal(QString)),
             SLOT(setFileInfoLabelText(QString)));
+    connect(workArea->getImageContainer(),
+            SIGNAL(openImageFailedSignal()),
+            SLOT(openOpenImageFailedMessageBox()));
 
     connect(openImageByLocalAction,
             SIGNAL(triggered()),
