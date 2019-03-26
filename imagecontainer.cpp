@@ -220,7 +220,7 @@ void ImageContainer::computeFileIntoContainerScaleRatio()
  * Use a label to show the image. And it will send a signal to main window, trigger a function
  * to change the label text in status bar, show the file name and size.
  */
-void ImageContainer::loadImage(QString fileName)
+bool ImageContainer::loadImage(QString fileName)
 {
     if(image != nullptr) {
         delete image;
@@ -229,7 +229,7 @@ void ImageContainer::loadImage(QString fileName)
 
     if(image->isNull()) {
         emit openImageFailedSignal();
-        return;
+        return false;
     }
 
     imageLabel->setPixmap(QPixmap::fromImage(*image));
@@ -255,4 +255,7 @@ void ImageContainer::loadImage(QString fileName)
 
     emit imageFileChangeSignal(info);
     emit showScaleRatioChangeSignal(showScaleRatio);
+    emit cursorOutImageSignal();
+
+    return true;
 }

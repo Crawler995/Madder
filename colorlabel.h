@@ -12,8 +12,8 @@ public:
     explicit ColorLabel(QColor color, QWidget *parent = 0);
     void setColor(QColor color);
 protected:
-    void enterEvent(QEvent *event);
     void mousePressEvent(QMouseEvent *event);
+    void enterEvent(QEvent *event);
 private:
     QLabel *colorLabel;
     QColor color;

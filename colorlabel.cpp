@@ -4,6 +4,9 @@
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QClipboard>
+#include <QCursor>
+#include <QMouseEvent>
+#include <QDebug>
 #include <QApplication>
 
 ColorLabel::ColorLabel(QColor color, QWidget *parent) : QWidget(parent)
@@ -16,20 +19,19 @@ ColorLabel::ColorLabel(QColor color, QWidget *parent) : QWidget(parent)
     setColor(color);
 }
 
-void ColorLabel::enterEvent(QEvent *event)
-{
-    setCursor(Qt::PointingHandCursor);
-}
-
 void ColorLabel::mousePressEvent(QMouseEvent *event)
 {
     emit copySuccessSignalFromColorLabelSignal();
 
     QClipboard *clipBoard = QApplication::clipboard();
-
     QString colorValue = qcolorToString(color);
 
     clipBoard->setText(colorValue);
+}
+
+void ColorLabel::enterEvent(QEvent *event)
+{
+    setCursor(Qt::PointingHandCursor);
 }
 
 void ColorLabel::setColor(QColor color)
@@ -41,3 +43,4 @@ void ColorLabel::setColor(QColor color)
 
     this->color = color;
 }
+

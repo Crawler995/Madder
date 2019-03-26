@@ -204,8 +204,9 @@ void MainWindow::openFileDialog()
         return;
     }
 
-    showNewSelectedImage(curFileName);
-    createNewSelectedImageColorBoard();
+    if(showNewSelectedImage(curFileName)) {
+        createNewSelectedImageColorBoard();
+    }
 }
 
 /**
@@ -255,8 +256,9 @@ void MainWindow::openDownloadImage(QString fileName)
     progressDialog->close();
     delete progressDialog;
 
-    showNewSelectedImage(fileName);
-    createNewSelectedImageColorBoard();
+    if(showNewSelectedImage(fileName)) {
+        createNewSelectedImageColorBoard();
+    }
 }
 
 /**
@@ -325,9 +327,9 @@ void MainWindow::updateDownloadProgress(qint64 alreadyDownloadSize, qint64 total
  *
  * Show the image in the image container.
  */
-void MainWindow::showNewSelectedImage(QString curFileName)
+bool MainWindow::showNewSelectedImage(QString curFileName)
 {
-    workArea->getImageContainer()->loadImage(curFileName);
+    return workArea->getImageContainer()->loadImage(curFileName);
 }
 
 /**

@@ -18,7 +18,7 @@ public:
     double getShowScaleRatio() const;
     QLabel *getImageLabel() const;
 
-    void loadImage(QString fileName);
+    bool loadImage(QString fileName);
 protected:
     void wheelEvent(QWheelEvent *event);
     void resizeEvent(QResizeEvent *event);

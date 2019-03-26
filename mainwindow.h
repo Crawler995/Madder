@@ -45,7 +45,7 @@ private:
 
     void connectSlots();
 
-    void showNewSelectedImage(QString curFileName);
+    bool showNewSelectedImage(QString curFileName);
     void createNewSelectedImageColorBoard();
     void beginDownload(QString urlString);
 

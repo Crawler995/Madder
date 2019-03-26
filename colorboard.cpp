@@ -5,6 +5,10 @@
 #include <QGridLayout>
 #include <QVector>
 #include <QGraphicsEffect>
+#include <QLinearGradient>
+#include <QBrush>
+#include <QPointF>
+#include <QPainter>
 
 ColorBoard::ColorBoard(QWidget *parent) : QWidget(parent)
 {
@@ -81,6 +85,7 @@ void ColorBoard::createColorLabels()
 
         colorValueLabel->setText(colorValue);
         colorValueLabel->setAlignment(Qt::AlignCenter);
+
         colorValueLabels.push_back(colorValueLabel);
 
         layout->addWidget(colorValueLabel, index * 3 + 1, 2, 3, 1);
@@ -115,6 +120,7 @@ void ColorBoard::changeColorLabels()
         }
     }
 }
+
 
 void ColorBoard::sendCopySuccessSignal()
 {
